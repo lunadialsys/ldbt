@@ -7,7 +7,7 @@ local record cli
         description: string
         command: argparse.Command
         configure: function(self, argparse.Command)
-        execute: function(self, Arguments)
+        execute: function(self, Arguments): integer
     end
 end
 

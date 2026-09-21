@@ -4,8 +4,12 @@ local sandbox = require 'impl.sandbox.sandbox'
 
 local record config
     record Config
+        -- path to where installed binary wrappers go
         bin_dir: string
+        -- path to where installed application packages go
         install_dir: string
+        -- invocation to summon the Lua interpreter (eg just `lua` if the interpreter is in PATH)
+        lua: string
     end
     
     home: string
@@ -14,6 +18,7 @@ local record config
 end
 
 local defaults = {
+    lua = 'lua',
     bin_dir = util.fix_separator('bin/'),
     install_dir = util.fix_separator('install/')
 }

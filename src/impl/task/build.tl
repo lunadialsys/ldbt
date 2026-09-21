@@ -12,7 +12,7 @@ local record build_task is task.Task
         warnings: integer
     end
 
-    run: function(meta.PackageInfo, boolean): BuildResult
+    run: function(meta.PackageInfo, boolean, ? string): BuildResult
 end
 
 local function recurse_srcdir(path: string, start?: string): {{string, string}}, {string}
@@ -73,19 +73,21 @@ local function parse_compiler_section(output: string, src_path: string, start_pa
         while next_newline do
             local error_msg = string.sub(all_errors, cursor, next_newline - 1)
 
-            local err_object: printer.ErrorInfo
-
-            local cut_error = string.sub(error_msg, #src_path + 1)
-            local iter = string.gmatch(cut_error, ':(%d+):(%d+): (.+)')
-            local t_line, t_col, rest = iter()
-            if t_line then
-                local line = tonumber(t_line) as integer
-                local column = tonumber(t_col) as integer
-                err_object = {line = line, column = column, message = rest}
+            local iter = string.gmatch(error_msg, '(%g+):(%d+):(%d+): (.+)')
+            local filename, t_line, t_col, rest = iter()
+            if filename then
+                -- this cannot be a simple string comparison, because
+                -- sometimes the teal compiler will emit malformed path names!
+                -- eg: `src/\impl/task/install.tl` which will break a naive ==
+                if string.find(filename, src_path, 1, true) then
+                    local line = tonumber(t_line) as integer
+                    local column = tonumber(t_col) as integer
+                    local err = {line = line, column = column, message = rest}
+                    table.insert(errors, err)
+                end
             else
-                err_object = {message = error_msg}
+                table.insert(errors, {message = error_msg})
             end
-            table.insert(errors, err_object)
 
             cursor = next_newline + 1
             next_newline = string.find(all_errors, '\n', cursor)
@@ -95,7 +97,7 @@ local function parse_compiler_section(output: string, src_path: string, start_pa
 end
 
 local function parse_compiler_output(output: string, src_path: string): boolean, {printer.ErrorInfo}, {printer.ErrorInfo}
-    -- parse errors (note: not syntax errors)
+    -- parse errors, while counting errors and syntax errors as the same thing
     local errors = parse_compiler_section(output, src_path, '%d+ error[s]?:\n')
     local syntax = parse_compiler_section(output, src_path, '%d+ syntax error[s]?:\n')
     if #syntax > 0 then
@@ -103,19 +105,14 @@ local function parse_compiler_output(output: string, src_path: string): boolean,
             table.insert(errors, j)
         end
     end
+    -- and parse warnings as a separate unit
     local warnings = parse_compiler_section(output, src_path, '%d+ warning[s]?:\n')
 
     return #errors > 0, errors, warnings
 end
 
-function build_task.run(pkg: meta.PackageInfo, verbose: boolean): build_task.BuildResult
-    if pkg.version then
-        print('%{bright white}building package %{bright cyan}%s %{dim white}(version %s)', pkg.name, pkg.version)
-    else
-        print('%{bright white}building package %{bright cyan}%s', pkg.name)
-    end
-
-    local dir_dst = util.fix_separator(pkg.target_dir)
+function build_task.run(pkg: meta.PackageInfo, verbose: boolean, out_dir?: string): build_task.BuildResult
+    local dir_dst = util.fix_separator(out_dir or pkg.target_dir)
     lfs.mkdir(dir_dst)
 
     local dir_src = util.fix_separator(pkg.source_dir)

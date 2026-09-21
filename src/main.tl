@@ -1,7 +1,6 @@
 -- ldbt: luna dial system's build tool
 -- a very small build tool for the Teal programming language
 
-package.path = package.path .. './?.lua;./dist/?.lua'
 local global_config = require 'global_config'
 require 'impl.console'
 local cli = require 'lib.cli'
@@ -11,6 +10,7 @@ local argparse = require 'argparse'
 
 local allcommands: {string:cli.Command} = {
     ['build b'] = require('commands.build'),
+    ['install'] = require('commands.install'),
 
     ['path'] = require('commands.path')
 }
@@ -57,6 +57,12 @@ local record UserError
 end
 
 local function dispatch_command(cmd: cli.Command, cmdname: string)
+    local exitcode = 0
+    local _inner_dispatch = function(c: cli.Command, a: cli.Arguments)
+        config.ensure()
+        exitcode = c:execute(a)
+    end
+
     local cmd_errfunc = function(er): any
         if type(er) == 'string' then
             return debug.traceback(er)
@@ -64,10 +70,7 @@ local function dispatch_command(cmd: cli.Command, cmdname: string)
         return er
     end
 
-    local ok, err: boolean, any | nil = xpcall(function(c: cli.Command, a: cli.Arguments)
-        config.ensure()
-        c:execute(a)
-    end, cmd_errfunc, cmd, args as cli.Arguments)
+    local ok, err: boolean, any | nil = xpcall(_inner_dispatch, cmd_errfunc, cmd, args as cli.Arguments)
     if not ok then
         if type(err) == 'table' then
             local er = err as UserError
@@ -82,8 +85,10 @@ local function dispatch_command(cmd: cli.Command, cmdname: string)
             eprint(tostring(err))
             eprint('%{dim white}-------------')
             eprint('%{dim white}please report a bug!')
+            os.exit(1)
         end
     end
+    os.exit(exitcode)
 end
 
 local cmd, name = find_command()

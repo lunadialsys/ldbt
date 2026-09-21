@@ -48,6 +48,9 @@ local record metadata
         -- version, defaults to nil (unversioned)
         version: string | nil
 
+        -- main built output file, defaults to 'main.lua'
+        entrypoint: string | nil
+
         -- metadata
         description: string | nil
         authors: {string}

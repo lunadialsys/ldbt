@@ -10,13 +10,21 @@ function cmd:configure(c: argparse.Command)
     c:option('-v --verbose'):args(0)
 end
 
-function cmd:execute(args: cli.Arguments)
+function cmd:execute(args: cli.Arguments): integer
     local _args = args
     local pkg = libpkg.evaluate_manifest()
+
+    if pkg.version then
+        print('%{bright white}building package %{bright cyan}%s %{dim white}(version %s)', pkg.name, pkg.version)
+    else
+        print('%{bright white}building package %{bright cyan}%s', pkg.name)
+    end
+
     local res = build_task.run(pkg, args.verbose == true)
     if not res.success then
         eprint('')
         eprint('%{bright red}build failed due to %d error%s', res.errors, res.errors > 1 and 's' or '')
+        return 1
     else
         print('')
         if res.warnings > 0 then
@@ -24,6 +32,7 @@ function cmd:execute(args: cli.Arguments)
         else
             print('%{bright green}build successful')
         end
+        return 0
     end
 end
 

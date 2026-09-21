@@ -38,12 +38,14 @@ env.description = unique_setter('description')
 env.version = unique_setter('version')
 
 -- target '5.1' && compat '5.1'
-env.target = unique_setter('gen_target', 'target')
-env.compat = unique_setter('gen_compat', 'compat')
+env.target = unique_setter('target', 'gen_target')
+env.compat = unique_setter('compat', 'gen_compat')
 
 -- source 'src/' && target 'dist/'
 env.source = unique_setter('source', 'source_dir')
 env.dist = unique_setter('dist', 'target_dir')
+
+env.main = unique_setter('main', 'entrypoint')
 
 env.author = function(n: string)
     if dsl.data.authors == nil then
@@ -168,6 +170,7 @@ function dsl.get(): meta.PackageInfo
         gen_compat = d.gen_compat or 'optional',
         source_dir = d.source_dir or 'src/',
         target_dir = d.target_dir or 'dist/',
+        entrypoint = d.entrypoint or 'main.lua',
         dependencies = deps
     } as meta.PackageInfo
 end

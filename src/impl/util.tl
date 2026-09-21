@@ -18,6 +18,12 @@ function util.shallow_copy(t: table): table
     return new_table
 end
 
+function util.escape(s: string): string
+    return (s
+        :gsub('\\', '\\\\')
+        :gsub('"', '\\"'))
+end
+
 function util.split(s: string, ptn: string): {string}
     local results = {}
     local pos = 1
