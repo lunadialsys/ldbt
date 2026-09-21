@@ -6,6 +6,15 @@ a small build tool for the [Teal](https://teal-language.org) language, intended 
 **note**: ldbt is in EARLY development and is bound to be UNSTABLE, and possibly prickly or hard to use.
 i'll do my best to iron out the quirks over time, but please keep that in mind!
 
+## installation
+0. if on windows, set the `LDBT_HOME` environment variable to somewhere like `%userprofile%\.ldbt`.
+1. clone the repository.
+2. use ldbt to install ldbt: `tl run src/main.tl -- install`.
+3. add the binary directory to your shell's path:
+    - if you're on windows, run `tl run src/main.tl -- path` and follow its instructions.
+    - if you're on linux, `tl run src/main.tl -- path >> ~/.bashrc` (or whatever shell you use, it uses `export PATH`).
+4. restart your shell and invoke `ldbt --version`!
+
 ## why not cyan?
 _([cyan](https://github.com/teal-language/cyan) is the official teal build tool.)_
 
