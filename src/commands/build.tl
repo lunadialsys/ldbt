@@ -1,16 +1,16 @@
-require 'command'
+local cli = require 'lib.cli'
 local argparse = require 'argparse'
 local libpkg = require 'impl.package'
 local build_task = require 'impl.build_task'
 
-local cmd: LdbtCommand = {}
+local cmd: cli.Command = {}
 cmd.description = 'Compile a project.'
 
 function cmd:configure(c: argparse.Command)
     c:option('-v --verbose'):args(0)
 end
 
-function cmd:execute(args: ArgsTable)
+function cmd:execute(args: cli.Arguments)
     local _args = args
     local pkg = libpkg.evaluate_manifest()
     local res = build_task.do_build(pkg, args.verbose == true)

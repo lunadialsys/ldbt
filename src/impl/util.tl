@@ -1,3 +1,5 @@
+local lfs = require 'lfs'
+
 local lib_util = {
     path_separator: string = nil,
     is_windows: boolean = false,
@@ -33,6 +35,23 @@ lib_util.stream_redirection = '2>&1'
 
 function lib_util.combine(...: string): string
     return table.concat(table.pack(...), lib_util.path_separator)
+end
+
+function lib_util.fix_separator(s: string): string
+    -- if on windows, replace forward slashes with backslashes because that's probably what you want
+    if lib_util.is_windows then
+        s = string.gsub(s, '/', '\\')
+    end
+    -- cut off the last character if our path ends with the path separator
+    if string.sub(s, #s, #s) == lib_util.path_separator then
+        s = string.sub(s, 1, #s-1)
+    end
+    return s
+end
+
+function lib_util.is_a(path: string, mode: lfs.FileMode): boolean
+    local t = lfs.attributes(path, 'mode')
+    return t and t == mode
 end
 
 return lib_util

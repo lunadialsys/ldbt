@@ -14,18 +14,6 @@ local record build_task
     do_build: function(meta.PackageInfo,boolean):BuildResult
 end
 
-local function correct_separator(s: string): string
-    -- if on windows, replace forward slashes with backslashes because that's probably what you want
-    if util.is_windows then
-        s = string.gsub(s, '/', '\\')
-    end
-    -- cut off the last character if our path ends with the path separator
-    if string.sub(s, #s, #s) == util.path_separator then
-        s = string.sub(s, 1, #s-1)
-    end
-    return s
-end
-
 local function recurse_srcdir(path: string, start?: string): {{string, string}}, {string}
     local results = {}
     local dirs = {}
@@ -126,10 +114,10 @@ function build_task.do_build(pkg: meta.PackageInfo, verbose: boolean): build_tas
         print('%{bright white}building package %{bright cyan}%s', pkg.name)
     end
 
-    local dir_dst = correct_separator(pkg.target_dir)
+    local dir_dst = util.fix_separator(pkg.target_dir)
     lfs.mkdir(dir_dst)
 
-    local dir_src = correct_separator(pkg.source_dir)
+    local dir_src = util.fix_separator(pkg.source_dir)
     local units, dirs = recurse_srcdir(dir_src)
 
     for _, dir in ipairs(dirs) do

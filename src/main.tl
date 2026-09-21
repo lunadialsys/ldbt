@@ -1,15 +1,18 @@
 -- ldbt: luna dial system's build tool
 -- a very small build tool for the Teal programming language
 
-package.path = package.path .. './?.lua;'
-require 'global_config'
+package.path = package.path .. './?.lua;./dist/?.lua'
+local global_config = require 'global_config'
 require 'impl.console'
-require 'command'
+local cli = require 'lib.cli'
+local config = require 'impl.config'
 
 local argparse = require 'argparse'
 
-local allcommands: {string:LdbtCommand} = {
-    ["build b"] = require('commands.build')
+local allcommands: {string:cli.Command} = {
+    ['build b'] = require('commands.build'),
+
+    ['path'] = require('commands.path')
 }
 
 local parser = argparse('ldbt', 'luna dial\'s build tool')
@@ -19,7 +22,9 @@ parser:option('--version'):description('Show version information and exit.'):arg
 
 for key,val in pairs(allcommands) do
     local c = parser:command(key, val.description)
-    val:configure(c)
+    if val.configure then
+        val:configure(c)
+    end
     val.command = c
     c:handle_options(true)
 end
@@ -29,13 +34,13 @@ local args = parser:parse()
 if args.version then
     print(
         '%{bright cyan}ldbt v%d.%d.%d %{white}(%s)%{dim white} - Copyright (C) 2026 Luna Dial System',
-        _CONFIG.version[1], _CONFIG.version[2], _CONFIG.version[3],
+        global_config.version.major, global_config.version.minor, global_config.version.patch,
         _VERSION
     )
     os.exit(0)
 end
 
-local function find_command(): LdbtCommand, string
+local function find_command(): cli.Command, string
     for key,val in pairs(allcommands) do
         for alias in key:gmatch("(%w+)%s*") do
             if args[alias] then
@@ -51,7 +56,7 @@ local record UserError
     data: any | nil
 end
 
-local function dispatch_command(cmd: LdbtCommand, cmdname: string)
+local function dispatch_command(cmd: cli.Command, cmdname: string)
     local cmd_errfunc = function(er): any
         if type(er) == 'string' then
             return debug.traceback(er)
@@ -59,7 +64,10 @@ local function dispatch_command(cmd: LdbtCommand, cmdname: string)
         return er
     end
 
-    local ok, err: boolean, any | nil = xpcall(cmd.execute, cmd_errfunc, cmd, args as ArgsTable)
+    local ok, err: boolean, any | nil = xpcall(function(c: cli.Command, a: cli.Arguments)
+        config.ensure()
+        c:execute(a)
+    end, cmd_errfunc, cmd, args as cli.Arguments)
     if not ok then
         if type(err) == 'table' then
             local er = err as UserError
