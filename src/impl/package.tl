@@ -1,15 +1,10 @@
 local dsl = require 'impl.dsl'
-local meta = require 'impl.meta'
+local meta = require 'lib.meta'
 local sandbox = require 'impl.sandbox.sandbox'
 
 local lib_package = {}
 
--- members available within package scripts
-
--- add the DSL methods into the package's sandbox
 local PACKAGE_MANIFEST_FILENAME = 'ldbt.lua'
-
-
 local timeout_exceeded = 'manifest evaluation took too long (is your script too complex?)'
 
 function lib_package.evaluate_manifest(): meta.PackageInfo
@@ -22,6 +17,7 @@ function lib_package.evaluate_manifest(): meta.PackageInfo
     fd:close()
 
     dsl.start_eval()
+    -- run it with the methods from the dsl's global table available
     sandbox.execute(src, dsl.global, timeout_exceeded, 'ldbt.lua')
     local p = dsl.get()
     return p

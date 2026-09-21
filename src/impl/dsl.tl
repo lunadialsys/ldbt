@@ -1,11 +1,11 @@
-local meta = require 'impl.meta'
+local meta = require 'lib.meta'
 local util = require 'impl.util'
 local semver = require 'semver'
 
-local lib_dsl = {
-    data: table = nil,
-    global: {string:any} = nil
-}
+local record dsl
+    data: table
+    global: {string:any}
+end
 
 local env: {string:any} = {}
 
@@ -19,11 +19,11 @@ end
 local function unique_setter(name: string, field?: string): function(string)
     if field == nil then field = name end
     return function(n: string)
-        local d = lib_dsl.data as {string:any}
+        local d = dsl.data as {string:any}
         if d[field] ~= nil then
             perror('more than one "'..name..'" directive present in manifest')
         end
-        (lib_dsl.data as {string:any})[field] = n
+        (dsl.data as {string:any})[field] = n
     end
 end
 
@@ -46,10 +46,10 @@ env.source = unique_setter('source', 'source_dir')
 env.dist = unique_setter('dist', 'target_dir')
 
 env.author = function(n: string)
-    if lib_dsl.data.authors == nil then
-        lib_dsl.data.authors = {}
+    if dsl.data.authors == nil then
+        dsl.data.authors = {}
     end
-    table.insert(lib_dsl.data.authors as {string}, n)
+    table.insert(dsl.data.authors as {string}, n)
 end
 
 
@@ -135,17 +135,17 @@ env.dependencies = function(d: {{string:any}})
         deptable[k._name] = convert_dep(k as DslDependency)
     end
     
-    lib_dsl.data.dependencies = deptable
+    dsl.data.dependencies = deptable
 end
 
 
 ---------------------------- library
-function lib_dsl.start_eval()
-    lib_dsl.data = {}
+function dsl.start_eval()
+    dsl.data = {}
 end
 
-function lib_dsl.get(): meta.PackageInfo
-    local d = lib_dsl.data
+function dsl.get(): meta.PackageInfo
+    local d = dsl.data
 
     if not d.name then
         error({msg='package directive is required'})
@@ -172,5 +172,5 @@ function lib_dsl.get(): meta.PackageInfo
     } as meta.PackageInfo
 end
 
-lib_dsl.global = env
-return lib_dsl
+dsl.global = env
+return dsl

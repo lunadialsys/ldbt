@@ -1,9 +1,10 @@
-local meta = require 'impl.meta'
+local task = require 'lib.task'
+local meta = require 'lib.meta'
 local util = require 'impl.util'
 local lfs = require 'lfs'
 local printer = require 'impl.printer'
 
-local record build_task
+local record build_task is task.Task
     record BuildResult
         success: boolean
         failure_point: string
@@ -11,7 +12,7 @@ local record build_task
         warnings: integer
     end
 
-    do_build: function(meta.PackageInfo,boolean):BuildResult
+    run: function(meta.PackageInfo, boolean): BuildResult
 end
 
 local function recurse_srcdir(path: string, start?: string): {{string, string}}, {string}
@@ -48,8 +49,8 @@ local function recurse_srcdir(path: string, start?: string): {{string, string}},
             local ext_from = string.find(result_path, '%.')
             local extension = string.sub(result_path, ext_from)
             local without_ext = string.sub(result_path, 1, ext_from - 1)
-            -- ignore .d.tl files as they are purely used for definitions
-            if extension == '.d.tl' then
+            -- only compile proper Teal files (not .d.tl and not .lua)
+            if extension ~= '.tl' then
                 goto next
             end
             table.insert(results, {result_path, without_ext})
@@ -107,7 +108,7 @@ local function parse_compiler_output(output: string, src_path: string): boolean,
     return #errors > 0, errors, warnings
 end
 
-function build_task.do_build(pkg: meta.PackageInfo, verbose: boolean): build_task.BuildResult
+function build_task.run(pkg: meta.PackageInfo, verbose: boolean): build_task.BuildResult
     if pkg.version then
         print('%{bright white}building package %{bright cyan}%s %{dim white}(version %s)', pkg.name, pkg.version)
     else
