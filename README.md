@@ -7,7 +7,9 @@ a small build tool for the [Teal](https://teal-language.org) language, intended 
 i'll do my best to iron out the quirks over time, but please keep that in mind!
 
 ## installation
-0. if on windows, set the `LDBT_HOME` environment variable to somewhere like `%userprofile%\.ldbt`.
+0. if on windows, set the `LDBT_HOME` environment variable to your `%userprofile%`.
+    - for example, `C:\Users\Nightshade`.
+    - this step is temporary; eventually I will replace this with an autodetection...
 1. clone the repository.
 2. use ldbt to install ldbt: `tl run src/main.tl -- install`.
 3. add the binary directory to your shell's path:
