@@ -20,6 +20,9 @@ parser:require_command(false)
 parser:add_help_command('help')
 parser:option('--version'):description('Show version information and exit.'):args(0)
 
+parser:option('-v --verbose'):description('Print out additional debug info.'):args(0):count('0-2')
+parser:option('-q --quiet'):description('Print out less output.'):args(0)
+
 for key,val in pairs(allcommands) do
     local c = parser:command(key, val.description)
     if val.configure then
@@ -33,10 +36,13 @@ local args = parser:parse()
 -- handle being called with --version
 if args.version then
     print(
-        '%{bright cyan}ldbt v%d.%d.%d %{white}(%s)%{dim white} - Copyright (C) 2026 Luna Dial System',
+        '%{bright cyan}ldbt v%d.%d.%d %{dim white} - Copyright (C) 2026 Luna Dial System',
         global_config.version.major, global_config.version.minor, global_config.version.patch,
         _VERSION
     )
+    local teal = require 'tl'
+    local tlpath = package.searchpath('tl', package.path)
+    print('Using %s (teal %s at %s)', _VERSION, teal.version(), tlpath)
     os.exit(0)
 end
 

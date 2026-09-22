@@ -2,13 +2,12 @@ local cli = require 'lib.cli'
 local argparse = require 'argparse'
 local libpkg = require 'impl.package'
 local build_task = require 'impl.task.build'
+local printer = require 'impl.printer'
 
 local cmd: cli.Command = {}
 cmd.description = 'Compile a project.'
 
-function cmd:configure(c: argparse.Command)
-    c:option('-v --verbose'):args(0)
-end
+function cmd:configure(_c: argparse.Command) end
 
 function cmd:execute(args: cli.Arguments): integer
     local _args = args
@@ -20,13 +19,15 @@ function cmd:execute(args: cli.Arguments): integer
         print('%{bright white}building package %{bright cyan}%s', pkg.name)
     end
 
-    local res = build_task.run(pkg, args.verbose == true)
+    local res = build_task.run(pkg, {
+        file_tracer = args.verbose >= 1 and printer.trace_file,
+        verbose = args.verbose >= 2
+    })
+
     if not res.success then
-        eprint('')
         eprint('%{bright red}build failed due to %d error%s', res.errors, res.errors > 1 and 's' or '')
         return 1
     else
-        print('')
         if res.warnings > 0 then
             print('%{bright yellow}build successful with %d warning%s', res.warnings, res.warnings > 1 and 's' or '')
         else

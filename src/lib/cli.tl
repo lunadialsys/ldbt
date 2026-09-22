@@ -1,7 +1,10 @@
 local argparse = require 'argparse'
 
 local record cli
-    type Arguments = {string: any}
+    record Arguments
+        verbose: integer
+        quiet: boolean
+    end
 
     record Command
         description: string

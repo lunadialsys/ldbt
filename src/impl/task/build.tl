@@ -12,7 +12,12 @@ local record build_task is task.Task
         warnings: integer
     end
 
-    run: function(meta.PackageInfo, boolean, ? string): BuildResult
+    record BuildLogConfig
+        verbose: boolean
+        file_tracer: printer.FileTracer
+    end
+
+    run: function(meta.PackageInfo, BuildLogConfig, ? string): BuildResult
 end
 
 local function recurse_srcdir(path: string, start?: string): {{string, string}}, {string}
@@ -82,7 +87,7 @@ local function parse_compiler_section(output: string, src_path: string, start_pa
                 if string.find(filename, src_path, 1, true) then
                     local line = tonumber(t_line) as integer
                     local column = tonumber(t_col) as integer
-                    local err = {line = line, column = column, message = rest}
+                    local err = {location = src_path, line = line, column = column, message = rest}
                     table.insert(errors, err)
                 end
             else
@@ -111,7 +116,7 @@ local function parse_compiler_output(output: string, src_path: string): boolean,
     return #errors > 0, errors, warnings
 end
 
-function build_task.run(pkg: meta.PackageInfo, verbose: boolean, out_dir?: string): build_task.BuildResult
+function build_task.run(pkg: meta.PackageInfo, log: build_task.BuildLogConfig, out_dir?: string): build_task.BuildResult
     local dir_dst = util.fix_separator(out_dir or pkg.target_dir)
     lfs.mkdir(dir_dst)
 
@@ -128,12 +133,14 @@ function build_task.run(pkg: meta.PackageInfo, verbose: boolean, out_dir?: strin
         local unit, no_ext = table.unpack(tuple)
         local src_path = util.combine(dir_src, unit)
         local dst_path = util.combine(dir_dst, no_ext .. '.lua')
-        print('  %{dim white}%s -> %s%{reset}', src_path, dst_path)
-        
+        if log.file_tracer then
+            log.file_tracer(src_path, dst_path)
+        end
+
         local redirection = util.stream_redirection
         local cmd = string.format([[tl gen -c --gen-target=%s --gen-compat=%s -o %s %s %s]],
             pkg.gen_target, pkg.gen_compat, dst_path, src_path, redirection)
-        if verbose then
+        if log.verbose then
             print(cmd)
         end
         local fd = io.popen(cmd, 'r')

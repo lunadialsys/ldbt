@@ -2,10 +2,13 @@ require 'impl.console'
 
 local record printer
     record ErrorInfo
+        location: string
         line: integer | nil
         column: integer | nil
         message: string
     end
+
+    type FileTracer = function(string, string)
 
     print_errors: function(string, {ErrorInfo}, TypePrinter)
     type TypePrinter = function(ErrorInfo, string)
@@ -13,12 +16,13 @@ end
 
 function printer.error(err: printer.ErrorInfo, line: string)
     if line then
+        local where = err.location:gsub('\\', '/')
         local preamble = string.format('%d | ', err.line as integer)
         local total_column = err.column + #preamble
         local pointer = string.rep(' ', total_column - 1) .. '^'
         eprint('  %{dim white}%s%{reset}%s', preamble, line)
         eprint('  %{bright red}%s', pointer)
-        eprint('  %{red}error %{reset}%{bright red}%d:%d: %s', err.line, err.column, err.message)
+        eprint('  %{red}error %{reset}%{bright red}%s:%d:%d: %s', where, err.line, err.column, err.message)
     else
         eprint('  %{red}error %{reset}%{bright red}%s', err.message)
         eprint('  %{dim white}(could not derive error\'s location)')
@@ -27,16 +31,21 @@ end
 
 function printer.warning(err: printer.ErrorInfo, line: string)
     if line then
+        local where = err.location:gsub('\\', '/')
         local preamble = string.format('%d | ', err.line as integer)
         local total_column = err.column + #preamble
         local pointer = string.rep(' ', total_column - 1) .. '^'
         eprint('  %{dim white}%s%{reset}%s', preamble, line)
         eprint('  %{bright yellow}%s', pointer)
-        eprint('  %{yellow}warning %{reset}%{bright yellow}%d:%d: %s', err.line, err.column, err.message)
+        eprint('  %{yellow}warning %{reset}%{bright yellow}%s:%d:%d: %s', where, err.line, err.column, err.message)
     else
         eprint('  %{yellow}warning %{reset}%{bright yellow}%s', err.message)
         eprint('  %{dim white}(could not derive warning\'s location)')
     end
+end
+
+function printer.trace_file(from_path: string, to_path: string)
+    print('  %{dim white}%s -> %s', from_path, to_path)
 end
 
 function printer.print_errors(filepath: string, errors: {printer.ErrorInfo}, method: printer.TypePrinter)
