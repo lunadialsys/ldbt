@@ -138,7 +138,7 @@ function build_task.run(pkg: meta.PackageInfo, log: build_task.BuildLogConfig, o
         end
 
         local redirection = util.stream_redirection
-        local cmd = string.format([[tl gen -c --gen-target=%s --gen-compat=%s -o %s %s %s]],
+        local cmd = string.format([[tl gen -c --gen-target=%s --gen-compat=%s -o "%s" "%s" %s]],
             pkg.gen_target, pkg.gen_compat, dst_path, src_path, redirection)
         if log.verbose then
             print(cmd)
